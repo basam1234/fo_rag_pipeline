@@ -1,0 +1,19 @@
+# Data Pipeline
+requests==2.31.0
+pandas==2.2.2
+numpy==1.26.4
+tenacity==8.2.3
+rapidfuzz==3.9.0
+beautifulsoup4==4.12.3
+lxml==5.2.2
+
+# RAG & LLM 
+langchain==0.2.1
+langchain-groq==0.1.4
+langchain-community==0.2.1
+sentence-transformers==3.0.1
+scikit-learn==1.5.0
+
+# UI & Hosting
+streamlit==1.35.0
+python-dotenv==1.0.1

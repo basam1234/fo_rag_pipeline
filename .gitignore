@@ -1,0 +1,20 @@
+# Environment
+venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+*.egg-info/
+.commandcode/
+
+# Data
+data/*.csv
+data/*.json
+data/raw_payloads/
+# But keep the directory structure
+!data/.gitkeep
+
+# OS
+.DS_Store
