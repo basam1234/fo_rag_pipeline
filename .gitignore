@@ -13,6 +13,7 @@ __pycache__/
 data/*.csv
 data/*.json
 data/raw_payloads/
+data/cache/
 # But keep the directory structure
 !data/.gitkeep
 
