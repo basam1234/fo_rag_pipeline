@@ -5,17 +5,15 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-.env
 *.egg-info/
 .commandcode/
+.streamlit/secrets.toml
 
-# Data
-data/*.csv
-data/*.json
-data/raw_payloads/
-data/cache/
-# But keep the directory structure
-!data/.gitkeep
+# Transient Pipeline Artifacts 
+data/checkpoint_enrichment.csv
+data/pipeline_errors.csv
+data/enrichment_rejected_candidates.csv
+data/provenance_log.csv
 
 # OS
 .DS_Store

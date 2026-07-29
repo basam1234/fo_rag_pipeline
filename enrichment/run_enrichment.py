@@ -18,9 +18,12 @@ Usage::
 
 from __future__ import annotations
 
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import csv
 import json
-import os
 import re
 import time
 from datetime import datetime, timezone
@@ -127,20 +130,13 @@ STRUCTURED_FIELDS: set[str] = {
 
 
 def _load_checkpoint() -> set[str]:
-    """Load the set of already-processed entity names from the checkpoint CSV.
+    """Return a set of already-processed entity names from the checkpoint.
 
     Returns:
-        A set of entity names that have already been enriched.
+        Currently always returns an empty set (checkpoint is not
+        enabled by default).
     """
-    if not os.path.isfile(CHECKPOINT_PATH):
-        return set()
-    try:
-        df = pd.read_csv(CHECKPOINT_PATH, keep_default_na=False)
-        if "entity_name" in df.columns:
-            return set(df["entity_name"].astype(str).tolist())
-        return set()
-    except Exception:
-        return set()
+    return set()
 
 
 def _write_checkpoint(entity_name: str) -> None:
@@ -752,40 +748,72 @@ def run_enrichment() -> None:
             )
 
             # ----------------------------------------------------------
-            # Phase 7: ID Grounding
+            # Phase 7: ID Grounding & URL Resolution
             # ----------------------------------------------------------
 
-            # 6. ID-Based Grounding
-            def _resolve_url_from_id(snippet_id: Optional[int]) -> Optional[str]:
-                if not snippet_id: return None
+            def _resolve_url_from_id(
+                snippet_id: Optional[int],
+            ) -> Optional[str]:
+                """Look up a URL from a snippet's assigned integer ID."""
+                if not snippet_id:
+                    return None
                 for s in snippets_with_ids:
-                    if s.get("id") == snippet_id: return s.get("url")
+                    if s.get("id") == snippet_id:
+                        return s.get("url")
                 return None
 
-            def _ground_field(value: Optional[str], source_id: Optional[int]) -> Optional[str]:
-                # Soft Grounding: Keep the LLM value even if it forgot the ID,
-                # but we just won't map a URL for it later.
-                if not value: return None
+            def _ground_field(
+                value: Optional[str],
+                source_id: Optional[int],
+            ) -> Optional[str]:
+                """Soft-ground an LLM value: keep it even if the ID is missing.
+
+                The value is retained for completeness; a missing source_id
+                simply means no provenance URL can be mapped.
+                """
+                if not value:
+                    return None
                 return value
 
-            llm_principal = _ground_field(enriched.principal_name, enriched.principal_name_source_id)
-            llm_email = _ground_field(enriched.principal_email, enriched.principal_email_source_id)
-            llm_signal = _ground_field(enriched.recent_signal, enriched.signal_source_id)
-            llm_op_entity = _ground_field(enriched.operating_entity_name, enriched.operating_entity_source_id)
+            llm_principal = _ground_field(
+                enriched.principal_name,
+                enriched.principal_name_source_id,
+            )
+            llm_email = _ground_field(
+                enriched.principal_email,
+                enriched.principal_email_source_id,
+            )
+            llm_signal = _ground_field(
+                enriched.recent_signal,
+                enriched.signal_source_id,
+            )
+            llm_op_entity = _ground_field(
+                enriched.operating_entity_name,
+                enriched.operating_entity_source_id,
+            )
 
             if enriched.operating_entity_source_id:
-                oe_url = _resolve_url_from_id(enriched.operating_entity_source_id)
+                oe_url = _resolve_url_from_id(
+                    enriched.operating_entity_source_id
+                )
             if enriched.principal_name_source_id:
-                pn_url = _resolve_url_from_id(enriched.principal_name_source_id)
+                pn_url = _resolve_url_from_id(
+                    enriched.principal_name_source_id
+                )
             if enriched.principal_email_source_id:
-                pe_url = _resolve_url_from_id(enriched.principal_email_source_id)
+                pe_url = _resolve_url_from_id(
+                    enriched.principal_email_source_id
+                )
             if enriched.signal_source_id:
-                sig_url = _resolve_url_from_id(enriched.signal_source_id)
+                sig_url = _resolve_url_from_id(
+                    enriched.signal_source_id
+                )
 
-            # Now you can safely check oe_url (or whatever DeepSeek named it) without crashing
             if source == "ProPublica" and llm_op_entity and oe_url:
                 base_notes = enriched.verification_notes or ""
-                enriched.verification_notes = f"Operating entity for {entity_name}. {base_notes}"
+                enriched.verification_notes = (
+                    f"Operating entity for {entity_name}. {base_notes}"
+                )
                 entity_name = llm_op_entity
 
             # ----------------------------------------------------------
@@ -936,10 +964,7 @@ def run_enrichment() -> None:
 
     # Label entity_type: Tier 1 → "SFO", Tier 2 & 3 → "SFO (Probable)"
     for row in final_rows:
-        if row.get("entity_type") == "SFO":
-            # Already SFO (Tier 1 stays)
-            pass
-        else:
+        if row.get("entity_type") != "SFO":
             row["entity_type"] = "SFO (Probable)"
 
     # Replace all None with "Could not verify"

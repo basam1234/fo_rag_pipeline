@@ -1,0 +1,7 @@
+[theme]
+base = "dark"
+primaryColor = "#D4AF37" # Muted elite gold for buttons/accents
+backgroundColor = "#0E1117" # Deep charcoal/black
+secondaryBackgroundColor = "#161B22" # Slightly lighter for sidebars/cards
+textColor = "#E6EDF3" # Off-white, easier on the eyes than pure white
+font = "sans serif"
